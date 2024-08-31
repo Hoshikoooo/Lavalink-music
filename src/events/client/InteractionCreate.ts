@@ -73,7 +73,7 @@ export default class InteractionCreate extends Event {
             const logs = this.client.channels.cache.get(this.client.config.commandLogs);
 
             if (command.permissions) {
-                if (command.permissions.client) {
+                if (command.permissions?.client) {
                     const missingClientPermissions = command.permissions.client.filter((perm) => !clientMember.permissions.has(perm));
 
                     if (missingClientPermissions.length > 0) {
@@ -86,7 +86,7 @@ export default class InteractionCreate extends Event {
                     }
                 }
 
-                if (command.permissions.user && !(interaction.member as GuildMember).permissions.has(command.permissions.user)) {
+                if (command.permissions?.user && !(interaction.member as GuildMember).permissions.has(command.permissions.user)) {
                     await interaction.reply({
                         content: T(locale, "event.interaction.no_user_permission"),
                         ephemeral: true,
@@ -94,7 +94,7 @@ export default class InteractionCreate extends Event {
                     return;
                 }
 
-                if (command.permissions.dev && this.client.config.owners) {
+                if (command.permissions?.dev && this.client.config.owners) {
                     const isDev = this.client.config.owners.includes(interaction.user.id);
                     if (!isDev) return;
                 }

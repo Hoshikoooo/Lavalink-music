@@ -36,13 +36,13 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@types/i18n": "^0.13.12",
-    "@types/node": "^22.4.0",
+    "@types/node": "^22.5.1",
     "@types/signale": "^1.4.7",
-    "prisma": "^5.18.0",
+    "prisma": "^5.19.0",
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@prisma/client": "^5.18.0",
+    "@prisma/client": "^5.19.0",
     "@top-gg/sdk": "^3.1.6",
     "discord.js": "^14.15.3",
     "dotenv": "^16.4.5",
@@ -51,8 +51,8 @@
     "shoukaku": "github:shipgirlproject/Shoukaku#master",
     "signale": "^1.4.0",
     "topgg-autoposter": "^2.0.2",
-    "tslib": "^2.6.3",
-    "undici": "^6.19.7"
+    "tslib": "^2.7.0",
+    "undici": "^6.19.8"
   },
   "signale": {
     "displayScope": true,

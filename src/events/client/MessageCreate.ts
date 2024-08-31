@@ -4,14 +4,14 @@ import {
     ButtonStyle,
     ChannelType,
     Collection,
-    type Message,
     EmbedBuilder,
     type GuildMember,
+    type Message,
     PermissionFlagsBits,
     type TextChannel,
 } from "discord.js";
-import { Context, Event, type Lavamusic } from "../../structures/index.js";
 import { T } from "../../structures/I18n.js";
+import { Context, Event, type Lavamusic } from "../../structures/index.js";
 
 export default class MessageCreate extends Event {
     constructor(client: Lavamusic, file: string) {
@@ -54,50 +54,48 @@ export default class MessageCreate extends Event {
         ctx.setArgs(args);
         ctx.guildLocale = locale;
 
-        const isDev = this.client.config.owners?.includes(message.author.id);
+        const clientMember = message.guild.members.resolve(this.client.user);
+        if (!(message.inGuild() && message.channel.permissionsFor(clientMember)?.has(PermissionFlagsBits.ViewChannel))) return;
 
-        if (!isDev) {
-            const clientMember = message.guild.members.resolve(this.client.user);
-            if (!(message.inGuild() && message.channel.permissionsFor(clientMember)?.has(PermissionFlagsBits.ViewChannel))) return;
+        if (
+            !(
+                clientMember.permissions.has(PermissionFlagsBits.ViewChannel) &&
+                clientMember.permissions.has(PermissionFlagsBits.SendMessages) &&
+                clientMember.permissions.has(PermissionFlagsBits.EmbedLinks) &&
+                clientMember.permissions.has(PermissionFlagsBits.ReadMessageHistory)
+            )
+        ) {
+            return await message.author
+                .send({
+                    content: T(locale, "event.message.no_send_message", {
+                        guild: message.guild.name,
+                        channel: `<#${message.channelId}>`,
+                    }),
+                })
+                .catch(() => {});
+        }
 
-            if (
-                !(
-                    clientMember.permissions.has(PermissionFlagsBits.ViewChannel) &&
-                    clientMember.permissions.has(PermissionFlagsBits.SendMessages) &&
-                    clientMember.permissions.has(PermissionFlagsBits.EmbedLinks) &&
-                    clientMember.permissions.has(PermissionFlagsBits.ReadMessageHistory)
-                )
-            ) {
-                return await message.author
-                    .send({
-                        content: T(locale, "event.message.no_send_message", {
-                            guild: message.guild.name,
-                            channel: `<#${message.channelId}>`,
+        if (command.permissions) {
+            if (command.permissions?.client) {
+                const missingClientPermissions = command.permissions.client.filter((perm) => !clientMember.permissions.has(perm));
+
+                if (missingClientPermissions.length > 0) {
+                    return await message.reply({
+                        content: T(locale, "event.message.no_permission", {
+                            permissions: missingClientPermissions.map((perm) => `\`${perm}\``).join(", "),
                         }),
-                    })
-                    .catch(() => {});
+                    });
+                }
             }
 
-            if (command.permissions) {
-                if (command.permissions.client) {
-                    const missingClientPermissions = command.permissions.client.filter((perm) => !clientMember.permissions.has(perm));
-
-                    if (missingClientPermissions.length > 0) {
-                        return await message.reply({
-                            content: T(locale, "event.message.no_permission", {
-                                permissions: missingClientPermissions.map((perm) => `\`${perm}\``).join(", "),
-                            }),
-                        });
-                    }
-                }
-
-                if (command.permissions.user && !(message.member as GuildMember).permissions.has(command.permissions.user)) {
+            if (command.permissions?.user) {
+                if (!(message.member as GuildMember).permissions.has(command.permissions.user)) {
                     return await message.reply({
                         content: T(locale, "event.message.no_user_permission"),
                     });
                 }
 
-                if (command.permissions.dev && this.client.config.owners) {
+                if (command.permissions?.dev && this.client.config.owners) {
                     const isDev = this.client.config.owners.includes(message.author.id);
                     if (!isDev) return;
                 }
@@ -108,13 +106,13 @@ export default class MessageCreate extends Event {
                 if (!voted) {
                     const voteBtn = new ActionRowBuilder<ButtonBuilder>().addComponents(
                         new ButtonBuilder()
-                            .setLabel("Vote for Me!")
+                            .setLabel(T(locale, "event.message.vote_button"))
                             .setURL(`https://top.gg/bot/${this.client.config.clientId}/vote`)
                             .setStyle(ButtonStyle.Link),
                     );
 
                     return await message.reply({
-                        content: "Wait! Before using this command, you must vote on top.gg. Thank you.",
+                        content: T(locale, "event.message.vote_message"),
                         components: [voteBtn],
                     });
                 }
@@ -233,30 +231,30 @@ export default class MessageCreate extends Event {
                     content: T(locale, "event.message.no_mention_everyone"),
                 });
             }
-        }
 
-        try {
-            return command.run(this.client, ctx, ctx.args);
-        } catch (error) {
-            this.client.logger.error(error);
-            await message.reply({
-                content: T(locale, "event.message.error", { error: error.message || "Unknown error" }),
-            });
-        } finally {
-            const logs = this.client.channels.cache.get(this.client.config.commandLogs);
-            if (logs) {
-                const embed = new EmbedBuilder()
-                    .setAuthor({
-                        name: "Prefix - Command Logs",
-                        iconURL: this.client.user?.avatarURL({ size: 2048 }),
-                    })
-                    .setColor(this.client.config.color.green)
-                    .setDescription(
-                        `**\`${command.name}\`** | Used By **${message.author.tag} \`${message.author.id}\`** From **${message.guild.name} \`${message.guild.id}\`**`,
-                    )
-                    .setTimestamp();
+            try {
+                return command.run(this.client, ctx, ctx.args);
+            } catch (error) {
+                this.client.logger.error(error);
+                await message.reply({
+                    content: T(locale, "event.message.error", { error: error.message || "Unknown error" }),
+                });
+            } finally {
+                const logs = this.client.channels.cache.get(this.client.config.commandLogs);
+                if (logs) {
+                    const embed = new EmbedBuilder()
+                        .setAuthor({
+                            name: "Prefix - Command Logs",
+                            iconURL: this.client.user?.avatarURL({ size: 2048 }),
+                        })
+                        .setColor(this.client.config.color.green)
+                        .setDescription(
+                            `**\`${command.name}\`** | Used By **${message.author.tag} \`${message.author.id}\`** From **${message.guild.name} \`${message.guild.id}\`**`,
+                        )
+                        .setTimestamp();
 
-                await (logs as TextChannel).send({ embeds: [embed] });
+                    await (logs as TextChannel).send({ embeds: [embed] });
+                }
             }
         }
     }
