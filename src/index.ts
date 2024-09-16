@@ -23,7 +23,7 @@ try {
     }
     console.clear();
     // Set a custom title for the console window
-    setConsoleTitle("Lavamusic - BETA");
+    setConsoleTitle("Lavamusic");
     const logFile = fs.readFileSync("./src/utils/LavaLogo.txt", "utf-8");
     console.log(theme.purpleNeon(logFile));
     shardStart(logger);
