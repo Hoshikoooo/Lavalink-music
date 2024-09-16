@@ -18,7 +18,7 @@ plugins:
       mixcloud: true # mixcloud.com
       soundgasm: true # soundgasm.net
       pixeldrain: true # pixeldrain.com
-  jiosaavn:
+            jiosaavn:
     apiURL: "https://saavn.dev/api" # The API URL for JioSaavn
   lavasrc:
     providers: # Custom providers for track loading. This is the default
@@ -35,10 +35,10 @@ plugins:
       flowerytts: false # Enable Flowery TTS source
       youtube: true # Enable YouTube search source (https://github.com/topi314/LavaSearch)
     lyrics-sources:
-      spotify: false # Enable Spotify lyrics source
-      deezer: false # Enable Deezer lyrics source
-      youtube: false # Enable YouTube lyrics source
-      yandexmusic: false # Enable Yandex Music lyrics source
+      spotify: true # Enable Spotify lyrics source
+      deezer: true # Enable Deezer lyrics source
+      youtube: true # Enable YouTube lyrics source
+      yandexmusic: true # Enable Yandex Music lyrics source
     spotify:
       clientId: "your client id"
       clientSecret: "your client secret"
