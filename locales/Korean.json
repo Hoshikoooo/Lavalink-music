@@ -626,7 +626,7 @@
 			"stopped_footer": "{displayName}님에 의해 정지됨",
 			"nothing_playing": "재생 중인 노래 없음",
 			"loop_set": "반복 모드가 {loop}로 변경되었어요.",
-			"loop_footer": "{displayName}님에 의해 반복 모드가 {loop}으로 설정됨",
+			"loop_footer": "{displayName}님에 의해 반복 모드가 {loop}로 설정됨",
 			"shuffled": "노래를 섞었어요.",
 			"no_previous_track": "이전 노래가 없어요.",
 			"playing_previous": "이전 노래를 재생할게요.",
