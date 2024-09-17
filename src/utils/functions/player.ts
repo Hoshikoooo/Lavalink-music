@@ -91,7 +91,7 @@ export async function autoPlayFunction(player: Player, lastTrack?: Track): Promi
             );
         return;
     }
-    if (lastTrack.info.sourceName === "jiosaavn") {
+    if (lastTrack.info.sourceName === "jiosaavn" as any) { // Type assertion to allow "jiosaavn"
         const res = await player.search({ query: `jsrec:${lastTrack.info.identifier}`, source: "jsrec" }, lastTrack.requester);
         if (res.tracks.length > 0) {
             const track = res.tracks.filter((v) => v.info.identifier !== lastTrack.info.identifier)[0];
