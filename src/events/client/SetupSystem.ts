@@ -1,7 +1,7 @@
 import { type Message, PermissionsBitField, TextChannel } from "discord.js";
-import { T } from "../../structures/I18n.js";
-import { Event, type Lavamusic } from "../../structures/index.js";
-import { oops, setupStart } from "../../utils/SetupSystem.js";
+import { T } from "../../structures/I18n";
+import { Event, type Lavamusic } from "../../structures/index";
+import { oops, setupStart } from "../../utils/SetupSystem";
 
 export default class SetupSystem extends Event {
     constructor(client: Lavamusic, file: string) {
@@ -46,14 +46,18 @@ export default class SetupSystem extends Event {
             return;
         }
 
-        let player = this.client.queue.get(message.guildId);
+        let player = this.client.manager.getPlayer(message.guildId);
         if (!player) {
-            player = await this.client.queue.create(
-                message.guild,
-                voiceChannel,
-                message.channel,
-                this.client.shoukaku.options.nodeResolver(this.client.shoukaku.nodes),
-            );
+            player = this.client.manager.createPlayer({
+                guildId: message.guildId,
+                voiceChannelId: voiceChannel.id,
+                textChannelId: message.channelId,
+                selfMute: false,
+                selfDeaf: true,
+
+                vcRegion: voiceChannel.rtcRegion,
+            });
+            if (!player.connected) await player.connect();
         }
 
         await setupStart(this.client, message.content, player, message);

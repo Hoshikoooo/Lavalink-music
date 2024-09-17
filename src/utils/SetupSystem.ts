@@ -1,21 +1,30 @@
 import { type ColorResolvable, EmbedBuilder, type Message, type TextChannel } from "discord.js";
-import { LoadType } from "shoukaku";
-import type { Song } from "../structures/Dispatcher.js";
-import { T } from "../structures/I18n.js";
-import type { Dispatcher, Lavamusic } from "../structures/index.js";
-import { getButtons } from "./Buttons.js";
 
-function neb(embed: EmbedBuilder, player: Dispatcher, client: Lavamusic, locale: string): EmbedBuilder {
-    if (!player?.current?.info) return embed;
-    const iconUrl = client.config.icons[player.current.info.sourceName] || client.user.displayAvatarURL({ extension: "png" });
-    const icon = player.current.info.artworkUrl || client.config.links.img;
+import type { Player, Track } from "lavalink-client";
+import { T } from "../structures/I18n";
+import type { Lavamusic } from "../structures/index";
+import type { Requester } from "../types";
+import { getButtons } from "./Buttons";
+
+/**
+ * A function that will generate an embed based on the player's current track.
+ * @param embed The embed that will be modified.
+ * @param player The player to get the current track from.
+ * @param client The client to get the config from.
+ * @param locale The locale to translate the strings.
+ * @returns The modified embed.
+ */
+function neb(embed: EmbedBuilder, player: Player, client: Lavamusic, locale: string): EmbedBuilder {
+    if (!player?.queue.current?.info) return embed;
+    const iconUrl = client.config.icons[player.queue.current.info.sourceName] || client.user.displayAvatarURL({ extension: "png" });
+    const icon = player.queue.current.info.artworkUrl || client.config.links.img;
 
     const description = T(locale, "player.setupStart.description", {
-        title: player.current.info.title,
-        uri: player.current.info.uri,
-        author: player.current.info.author,
-        length: client.utils.formatTime(player.current.info.length),
-        requester: player.current.info.requester,
+        title: player.queue.current.info.title,
+        uri: player.queue.current.info.uri,
+        author: player.queue.current.info.author,
+        length: client.utils.formatTime(player.queue.current.info.duration),
+        requester: (player.queue.current.requester as Requester).id,
     });
     return embed
         .setAuthor({
@@ -27,7 +36,16 @@ function neb(embed: EmbedBuilder, player: Dispatcher, client: Lavamusic, locale:
         .setColor(client.color.main);
 }
 
-async function setupStart(client: Lavamusic, query: string, player: Dispatcher, message: Message): Promise<void> {
+/**
+ * A function that will generate a setup message or edit an existing one
+ * with the current song playing.
+ * @param client The client to get the config from.
+ * @param query The query to search for.
+ * @param player The player to get the current track from.
+ * @param message The message to edit or send the setup message.
+ * @returns A promise that resolves when the function is done.
+ */
+async function setupStart(client: Lavamusic, query: string, player: Player, message: Message): Promise<void> {
     let m: Message;
     const embed = client.embed();
     const n = client.embed().setColor(client.color.main);
@@ -45,47 +63,27 @@ async function setupStart(client: Lavamusic, query: string, player: Dispatcher, 
     if (m) {
         try {
             if (message.inGuild()) {
-                const res = await client.queue.search(query);
+                const res = await player.search(query, message.author);
+
                 switch (res.loadType) {
-                    case LoadType.ERROR:
+                    case "empty":
+                    case "error":
                         await message.channel
                             .send({
                                 embeds: [embed.setColor(client.color.red).setDescription(T(locale, "player.setupStart.error_searching"))],
                             })
                             .then((msg) => setTimeout(() => msg.delete(), 5000));
                         break;
-                    case LoadType.EMPTY:
-                        await message.channel
-                            .send({
-                                embeds: [embed.setColor(client.color.red).setDescription(T(locale, "player.setupStart.no_results"))],
-                            })
-                            .then((msg) => setTimeout(() => msg.delete(), 5000));
-                        break;
-                    case LoadType.TRACK: {
-                        const track = player.buildTrack(res.data, message.author);
-                        if (player.queue.length > client.config.maxQueueSize) {
-                            await message.channel
-                                .send({
-                                    embeds: [
-                                        embed.setColor(client.color.red).setDescription(
-                                            T(locale, "player.setupStart.queue_too_long", {
-                                                maxQueueSize: client.config.maxQueueSize,
-                                            }),
-                                        ),
-                                    ],
-                                })
-                                .then((msg) => setTimeout(() => msg.delete(), 5000));
-                            return;
-                        }
-                        player.queue.push(track);
-                        await player.isPlaying();
+                    case "search":
+                    case "track":
+                        player.queue.add(res.tracks[0]);
                         await message.channel
                             .send({
                                 embeds: [
                                     embed.setColor(client.color.main).setDescription(
                                         T(locale, "player.setupStart.added_to_queue", {
-                                            title: res.data.info.title,
-                                            uri: res.data.info.uri,
+                                            title: res.tracks[0].info.title,
+                                            uri: res.tracks[0].info.uri,
                                         }),
                                     ),
                                 ],
@@ -94,48 +92,15 @@ async function setupStart(client: Lavamusic, query: string, player: Dispatcher, 
                         neb(n, player, client, locale);
                         await m.edit({ embeds: [n] }).catch(() => {});
                         break;
-                    }
-                    case LoadType.PLAYLIST:
-                        if (res.data.tracks.length > client.config.maxPlaylistSize) {
-                            await message.channel
-                                .send({
-                                    embeds: [
-                                        embed.setColor(client.color.red).setDescription(
-                                            T(locale, "player.setupStart.playlist_too_long", {
-                                                maxPlaylistSize: client.config.maxPlaylistSize,
-                                            }),
-                                        ),
-                                    ],
-                                })
-                                .then((msg) => setTimeout(() => msg.delete(), 5000));
-                            return;
-                        }
-                        for (const track of res.data.tracks) {
-                            const pl = player.buildTrack(track, message.author);
-                            if (player.queue.length > client.config.maxQueueSize) {
-                                await message.channel
-                                    .send({
-                                        embeds: [
-                                            embed.setColor(client.color.red).setDescription(
-                                                T(locale, "player.setupStart.queue_too_long", {
-                                                    maxQueueSize: client.config.maxQueueSize,
-                                                }),
-                                            ),
-                                        ],
-                                    })
-                                    .then((msg) => setTimeout(() => msg.delete(), 5000));
-                                return;
-                            }
-                            player.queue.push(pl);
-                        }
-                        await player.isPlaying();
+                    case "playlist":
+                        player.queue.add(res.tracks);
                         await message.channel
                             .send({
                                 embeds: [
                                     embed
                                         .setColor(client.color.main)
                                         .setDescription(
-                                            T(locale, "player.setupStart.added_playlist_to_queue", { length: res.data.tracks.length }),
+                                            T(locale, "player.setupStart.added_playlist_to_queue", { length: res.tracks.length }),
                                         ),
                                 ],
                             })
@@ -143,41 +108,8 @@ async function setupStart(client: Lavamusic, query: string, player: Dispatcher, 
                         neb(n, player, client, locale);
                         await m.edit({ embeds: [n] }).catch(() => {});
                         break;
-                    case LoadType.SEARCH: {
-                        const track = player.buildTrack(res.data[0], message.author);
-                        if (player.queue.length > client.config.maxQueueSize) {
-                            await message.channel
-                                .send({
-                                    embeds: [
-                                        embed.setColor(client.color.red).setDescription(
-                                            T(locale, "player.setupStart.queue_too_long", {
-                                                maxQueueSize: client.config.maxQueueSize,
-                                            }),
-                                        ),
-                                    ],
-                                })
-                                .then((msg) => setTimeout(() => msg.delete(), 5000));
-                            return;
-                        }
-                        player.queue.push(track);
-                        await player.isPlaying();
-                        await message.channel
-                            .send({
-                                embeds: [
-                                    embed.setColor(client.color.main).setDescription(
-                                        T(locale, "player.setupStart.added_to_queue", {
-                                            title: res.data[0].info.title,
-                                            uri: res.data[0].info.uri,
-                                        }),
-                                    ),
-                                ],
-                            })
-                            .then((msg) => setTimeout(() => msg.delete(), 5000));
-                        neb(n, player, client, locale);
-                        await m.edit({ embeds: [n] }).catch(() => {});
-                        break;
-                    }
                 }
+                if (!player.playing) await player.play();
             }
         } catch (error) {
             client.logger.error(error);
@@ -185,15 +117,25 @@ async function setupStart(client: Lavamusic, query: string, player: Dispatcher, 
     }
 }
 
+/**
+ * A function that will generate an embed based on the player's current track.
+ * @param msgId The message ID of the setup message.
+ * @param channel The channel to send the message in.
+ * @param player The player to get the current track from.
+ * @param track The track to generate the embed for.
+ * @param client The client to get the config from.
+ * @param locale The locale to translate the strings.
+ * @returns A promise that resolves when the function is done.
+ */
 async function trackStart(
     msgId: any,
     channel: TextChannel,
-    player: Dispatcher,
-    track: Song,
+    player: Player,
+    track: Track,
     client: Lavamusic,
     locale: string,
 ): Promise<void> {
-    const icon = player.current ? player.current.info.artworkUrl : client.config.links.img;
+    const icon = player.queue.current ? player.queue.current.info.artworkUrl : client.config.links.img;
     let m: Message;
 
     try {
@@ -202,13 +144,13 @@ async function trackStart(
         client.logger.error(error);
     }
 
-    const iconUrl = client.config.icons[player.current.info.sourceName] || client.user.displayAvatarURL({ extension: "png" });
+    const iconUrl = client.config.icons[player.queue.current.info.sourceName] || client.user.displayAvatarURL({ extension: "png" });
     const description = T(locale, "player.setupStart.description", {
         title: track.info.title,
         uri: track.info.uri,
         author: track.info.author,
-        length: client.utils.formatTime(track.info.length),
-        requester: track.info.requester,
+        length: client.utils.formatTime(track.info.duration),
+        requester: (player.queue.current.requester as Requester).id,
     });
 
     const embed = client
@@ -226,7 +168,7 @@ async function trackStart(
             .edit({
                 embeds: [embed],
                 components: getButtons(player, client).map((b) => {
-                    b.components.forEach((c) => c.setDisabled(!player?.current));
+                    b.components.forEach((c) => c.setDisabled(!player?.queue.current));
                     return b;
                 }),
             })
@@ -236,7 +178,7 @@ async function trackStart(
             .send({
                 embeds: [embed],
                 components: getButtons(player, client).map((b) => {
-                    b.components.forEach((c) => c.setDisabled(!player?.current));
+                    b.components.forEach((c) => c.setDisabled(!player?.queue.current));
                     return b;
                 }),
             })
@@ -263,15 +205,15 @@ async function updateSetup(client: Lavamusic, guild: any, locale: string): Promi
         }
     }
     if (m) {
-        const player = client.queue.get(guild.id);
-        if (player?.current) {
-            const iconUrl = client.config.icons[player.current.info.sourceName] || client.user.displayAvatarURL({ extension: "png" });
+        const player = client.manager.getPlayer(guild.id);
+        if (player?.queue.current) {
+            const iconUrl = client.config.icons[player.queue.current.info.sourceName] || client.user.displayAvatarURL({ extension: "png" });
             const description = T(locale, "player.setupStart.description", {
-                title: player.current.info.title,
-                uri: player.current.info.uri,
-                author: player.current.info.author,
-                length: client.utils.formatTime(player.current.info.length),
-                requester: player.current.info.requester,
+                title: player.queue.current.info.title,
+                uri: player.queue.current.info.uri,
+                author: player.queue.current.info.author,
+                length: client.utils.formatTime(player.queue.current.info.duration),
+                requester: (player.queue.current.requester as Requester).id,
             });
 
             const embed = client
@@ -282,12 +224,12 @@ async function updateSetup(client: Lavamusic, guild: any, locale: string): Promi
                 })
                 .setColor(client.color.main)
                 .setDescription(description)
-                .setImage(player.current.info.artworkUrl);
+                .setImage(player.queue.current.info.artworkUrl);
             await m
                 .edit({
                     embeds: [embed],
                     components: getButtons(player, client).map((b) => {
-                        b.components.forEach((c) => c.setDisabled(!player?.current));
+                        b.components.forEach((c) => c.setDisabled(!player?.queue.current));
                         return b;
                     }),
                 })

@@ -31,14 +31,11 @@ export default class _8d extends Command {
     }
 
     public async run(client: Lavamusic, ctx: Context): Promise<any> {
-        const player = client.queue.get(ctx.guild!.id);
-        const filterEnabled = player.filters.includes("8D");
-        const rotationConfig = filterEnabled ? {} : { rotationHz: 0.2 };
-
-        await player.player.setRotation(rotationConfig);
+        const player = client.manager.getPlayer(ctx.guild!.id);
+        const filterEnabled = player.filterManager.filters.rotation;
 
         if (filterEnabled) {
-            player.filters = player.filters.filter((filter) => filter !== "8D");
+            await player.filterManager.toggleRotation();
             await ctx.sendMessage({
                 embeds: [
                     {
@@ -48,7 +45,7 @@ export default class _8d extends Command {
                 ],
             });
         } else {
-            player.filters.push("8D");
+            await player.filterManager.toggleRotation(0.2);
             await ctx.sendMessage({
                 embeds: [
                     {

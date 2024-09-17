@@ -38,7 +38,7 @@ export default class Speed extends Command {
     }
 
     public async run(client: Lavamusic, ctx: Context, args: string[]): Promise<any> {
-        const player = client.queue.get(ctx.guild!.id);
+        const player = client.manager.getPlayer(ctx.guild!.id);
         const speedString = args[0].replace(",", ".");
         const isValidNumber = /^[0-9]*\.?[0-9]+$/.test(speedString);
         const speed = parseFloat(speedString);
@@ -55,7 +55,7 @@ export default class Speed extends Command {
             return;
         }
 
-        player.player.setTimescale({ speed });
+        player.filterManager.setSpeed(speed);
         await ctx.sendMessage({
             embeds: [
                 {

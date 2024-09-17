@@ -31,9 +31,9 @@ export default class Reset extends Command {
     }
 
     public async run(client: Lavamusic, ctx: Context): Promise<any> {
-        const player = client.queue.get(ctx.guild!.id);
-        player.player.clearFilters();
-        player.filters = [];
+        const player = client.manager.getPlayer(ctx.guild!.id);
+        player.filterManager.resetFilters();
+        player.filterManager.clearEQ();
         await ctx.sendMessage({
             embeds: [
                 {

@@ -31,10 +31,9 @@ export default class Rotation extends Command {
     }
 
     public async run(client: Lavamusic, ctx: Context): Promise<any> {
-        const player = client.queue.get(ctx.guild!.id);
-        if (player.filters.includes("rotation")) {
-            player.player.setRotation();
-            player.filters = player.filters.filter((filter) => filter !== "rotation");
+        const player = client.manager.getPlayer(ctx.guild!.id);
+        if (player.filterManager.filters.rotation) {
+            player.filterManager.toggleRotation();
             await ctx.sendMessage({
                 embeds: [
                     {
@@ -44,8 +43,7 @@ export default class Rotation extends Command {
                 ],
             });
         } else {
-            player.player.setRotation({ rotationHz: 0 });
-            player.filters.push("rotation");
+            player.filterManager.toggleRotation();
             await ctx.sendMessage({
                 embeds: [
                     {
