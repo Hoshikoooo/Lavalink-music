@@ -233,10 +233,10 @@ export default class SetupButtons extends Event {
                 case "HIGH_VOL_BUT":
                     await handleVolumeChange(10);
                     break;
-                }
             }
         }
     }
+}
 
 /**
  * Project: lavamusic
