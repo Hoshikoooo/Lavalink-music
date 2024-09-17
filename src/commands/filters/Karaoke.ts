@@ -31,12 +31,11 @@ export default class Karaoke extends Command {
     }
 
     public async run(client: Lavamusic, ctx: Context): Promise<any> {
-        const player = client.queue.get(ctx.guild!.id);
-        const filterEnabled = player.filters.includes("karaoke");
+        const player = client.manager.getPlayer(ctx.guild!.id);
+        const filterEnabled = player.filterManager.filters.karaoke;
 
         if (filterEnabled) {
-            await player.player.setKaraoke();
-            player.filters = player.filters.filter((filter) => filter !== "karaoke");
+            await player.filterManager.toggleKaraoke();
             await ctx.sendMessage({
                 embeds: [
                     {
@@ -46,13 +45,7 @@ export default class Karaoke extends Command {
                 ],
             });
         } else {
-            await player.player.setKaraoke({
-                level: 1,
-                monoLevel: 1,
-                filterBand: 220,
-                filterWidth: 100,
-            });
-            player.filters.push("karaoke");
+            await player.filterManager.toggleKaraoke();
             await ctx.sendMessage({
                 embeds: [
                     {

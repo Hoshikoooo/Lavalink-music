@@ -121,6 +121,9 @@
 			"messages": {
 				"filter_enabled": "`✅` | Le filtre de basses a été `ACTIVÉ`. \n**Attention, écouter trop fort peut endommager votre audition !**",
 				"filter_disabled": "`✅` | Le filtre de basses a été `DÉSACTIVÉ`."
+			},
+			"options": {
+				"level": "The bassboost level you want to set"
 			}
 		},
 		"distorsion": {
@@ -494,6 +497,9 @@
 				"language": "La langue que vous souhaitez définir",
 				"reset": "Change la langue par défaut"
 			}
+		},
+		"lyrics": {
+			"description": "Get's the lyrics of the currently playing track"
 		}
 	},
 	"buttons": {

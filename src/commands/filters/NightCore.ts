@@ -31,12 +31,11 @@ export default class NightCore extends Command {
     }
 
     public async run(client: Lavamusic, ctx: Context): Promise<any> {
-        const player = client.queue.get(ctx.guild!.id);
-        const filterEnabled = player.filters.includes("nightcore");
+        const player = client.manager.getPlayer(ctx.guild!.id);
+        const filterEnabled = player.filterManager.filters.nightcore;
 
         if (filterEnabled) {
-            await player.player.setTimescale({});
-            player.filters = player.filters.filter((filter) => filter !== "nightcore");
+            await player.filterManager.toggleNightcore();
             await ctx.sendMessage({
                 embeds: [
                     {
@@ -46,8 +45,7 @@ export default class NightCore extends Command {
                 ],
             });
         } else {
-            await player.player.setTimescale({ rate: 1.2 });
-            player.filters.push("nightcore");
+            await player.filterManager.toggleNightcore();
             await ctx.sendMessage({
                 embeds: [
                     {

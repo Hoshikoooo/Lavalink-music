@@ -1,9 +1,10 @@
 import type { Message } from "discord.js";
-import { T } from "../../structures/I18n.js";
-import { Event, type Lavamusic } from "../../structures/index.js";
-import { getButtons } from "../../utils/Buttons.js";
-import { buttonReply } from "../../utils/SetupSystem.js";
-import { checkDj } from "../player/TrackStart.js";
+import { T } from "../../structures/I18n";
+import { Event, type Lavamusic } from "../../structures/index";
+import type { Requester } from "../../types";
+import { getButtons } from "../../utils/Buttons";
+import { buttonReply } from "../../utils/SetupSystem";
+import { checkDj } from "../player/TrackStart";
 
 export default class SetupButtons extends Event {
     constructor(client: Lavamusic, file: string) {
@@ -29,12 +30,13 @@ export default class SetupButtons extends Event {
                 this.client.color.red,
             );
         }
-        const player = this.client.queue.get(interaction.guildId);
+        const player = this.client.manager.getPlayer(interaction.guildId);
         if (!player) return await buttonReply(interaction, T(locale, "event.setupButton.no_music_playing"), this.client.color.red);
         if (!player.queue) return await buttonReply(interaction, T(locale, "event.setupButton.no_music_playing"), this.client.color.red);
-        if (!player.current) return await buttonReply(interaction, T(locale, "event.setupButton.no_music_playing"), this.client.color.red);
+        if (!player.queue.current)
+            return await buttonReply(interaction, T(locale, "event.setupButton.no_music_playing"), this.client.color.red);
         const data = await this.client.db.getSetup(interaction.guildId);
-        const { title, uri, length, artworkUrl, sourceName, isStream, requester } = player.current.info;
+        const { title, uri, duration, artworkUrl, sourceName, isStream } = player.queue.current.info;
         let message: Message;
         try {
             message = await interaction.channel.messages.fetch(data.messageId, {
@@ -53,7 +55,7 @@ export default class SetupButtons extends Event {
             })
             .setColor(this.client.color.main)
             .setDescription(
-                `[${title}](${uri}) - ${isStream ? T(locale, "event.setupButton.live") : this.client.utils.formatTime(length)} - ${T(locale, "event.setupButton.requested_by", { requester })}`,
+                `[${title}](${uri}) - ${isStream ? T(locale, "event.setupButton.live") : this.client.utils.formatTime(duration)} - ${T(locale, "event.setupButton.requested_by", { requester: (player.queue.current.requester as Requester).id })}`,
             )
             .setImage(artworkUrl || this.client.user.displayAvatarURL({ extension: "png" }));
 
@@ -63,8 +65,8 @@ export default class SetupButtons extends Event {
         }
         if (message) {
             const handleVolumeChange = async (change: number) => {
-                const vol = player.player.volume + change;
-                player.player.setGlobalVolume(vol);
+                const vol = player.volume + change;
+                player.setVolume(vol);
                 await buttonReply(interaction, T(locale, "event.setupButton.volume_set", { vol }), this.client.color.main);
                 await message.edit({
                     embeds: [
@@ -86,7 +88,7 @@ export default class SetupButtons extends Event {
                     await handleVolumeChange(10);
                     break;
                 case "PAUSE_BUT": {
-                    const name = player.player.paused ? T(locale, "event.setupButton.resumed") : T(locale, "event.setupButton.paused");
+                    const name = player.paused ? T(locale, "event.setupButton.resumed") : T(locale, "event.setupButton.paused");
                     player.pause();
                     await buttonReply(interaction, T(locale, "event.setupButton.pause_resume", { name }), this.client.color.main);
                     await message.edit({
@@ -104,7 +106,7 @@ export default class SetupButtons extends Event {
                     break;
                 }
                 case "SKIP_BUT":
-                    if (player.queue.length === 0) {
+                    if (player.queue.tracks.length === 0) {
                         return await buttonReply(interaction, T(locale, "event.setupButton.no_music_to_skip"), this.client.color.main);
                     }
                     player.skip();
@@ -121,7 +123,7 @@ export default class SetupButtons extends Event {
                     });
                     break;
                 case "STOP_BUT":
-                    player.stop();
+                    player.stopPlaying(true, false);
                     await buttonReply(interaction, T(locale, "event.setupButton.stopped"), this.client.color.main);
                     await message.edit({
                         embeds: [
@@ -144,9 +146,9 @@ export default class SetupButtons extends Event {
                     });
                     break;
                 case "LOOP_BUT": {
-                    const loopOptions: Array<"off" | "queue" | "repeat"> = ["off", "queue", "repeat"];
-                    const newLoop = loopOptions[(loopOptions.indexOf(player.loop) + 1) % loopOptions.length];
-                    player.setLoop(newLoop);
+                    const loopOptions: Array<"off" | "queue" | "track"> = ["off", "queue", "track"];
+                    const newLoop = loopOptions[(loopOptions.indexOf(player.repeatMode) + 1) % loopOptions.length];
+                    player.setRepeatMode(newLoop);
                     await buttonReply(
                         interaction,
                         T(locale, "event.setupButton.loop_set", {
@@ -168,14 +170,16 @@ export default class SetupButtons extends Event {
                     break;
                 }
                 case "SHUFFLE_BUT":
-                    player.setShuffle();
+                    player.queue.shuffle();
                     await buttonReply(interaction, T(locale, "event.setupButton.shuffled"), this.client.color.main);
                     break;
                 case "PREV_BUT":
-                    if (!player.previous) {
+                    if (!player.queue.previous) {
                         return await buttonReply(interaction, T(locale, "event.setupButton.no_previous_track"), this.client.color.main);
                     }
-                    player.previousTrack();
+                    player.play({
+                        track: player.queue.previous[0],
+                    });
                     await buttonReply(interaction, T(locale, "event.setupButton.playing_previous"), this.client.color.main);
                     await message.edit({
                         embeds: [
@@ -189,7 +193,7 @@ export default class SetupButtons extends Event {
                     });
                     break;
                 case "REWIND_BUT": {
-                    const time = player.player.position - 10000;
+                    const time = player.position - 10000;
                     if (time < 0) {
                         return await buttonReply(interaction, T(locale, "event.setupButton.rewind_limit"), this.client.color.main);
                     }
@@ -208,8 +212,8 @@ export default class SetupButtons extends Event {
                     break;
                 }
                 case "FORWARD_BUT": {
-                    const time = player.player.position + 10000;
-                    if (time > player.current.info.length) {
+                    const time = player.position + 10000;
+                    if (time > player.queue.current.info.duration) {
                         return await buttonReply(interaction, T(locale, "event.setupButton.forward_limit"), this.client.color.main);
                     }
                     player.seek(time);

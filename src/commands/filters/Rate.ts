@@ -38,7 +38,7 @@ export default class Rate extends Command {
     }
 
     public async run(client: Lavamusic, ctx: Context, args: string[]): Promise<any> {
-        const player = client.queue.get(ctx.guild!.id);
+        const player = client.manager.getPlayer(ctx.guild!.id);
         const rateString = args[0].replace(",", ".");
         const isValidNumber = /^[0-9]*\.?[0-9]+$/.test(rateString);
         const rate = parseFloat(rateString);
@@ -55,7 +55,7 @@ export default class Rate extends Command {
             return;
         }
 
-        await player.player.setTimescale({ rate });
+        await player.filterManager.setRate(rate);
         await ctx.sendMessage({
             embeds: [
                 {

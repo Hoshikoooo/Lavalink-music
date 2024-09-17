@@ -134,6 +134,9 @@
 			"messages": {
 				"filter_enabled": "`✅` | 低音增强滤镜已`启用`。\n**请注意，音量过大会损害您的听力！**",
 				"filter_disabled": "`✅` | 低音增强滤镜已`禁用`。"
+			},
+			"options": {
+				"level": "The bassboost level you want to set"
 			}
 		},
 		"distorsion": {
@@ -494,6 +497,9 @@
 				"playlist_stolen": "已成功从 {user} 窃取播放列表 `{playlist}`。",
 				"error_occurred": "窃取播放列表时出错。"
 			}
+		},
+		"lyrics": {
+			"description": "Get's the lyrics of the currently playing track"
 		}
 	},
 	"buttons": {

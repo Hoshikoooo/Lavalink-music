@@ -1,6 +1,6 @@
 import { exec } from "node:child_process";
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
-import { Command, type Context, type Lavamusic } from "../../structures/index.js";
+import { Command, type Context, type Lavamusic } from "../../structures/index";
 
 export default class Restart extends Command {
     constructor(client: Lavamusic) {
@@ -61,7 +61,7 @@ export default class Restart extends Command {
             });
 
             await client.destroy();
-            exec("node scripts/restart.ts");
+            exec("node scripts/restart.js");
             process.exit(0);
         });
 

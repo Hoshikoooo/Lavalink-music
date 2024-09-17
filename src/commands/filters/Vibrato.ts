@@ -31,12 +31,11 @@ export default class Vibrato extends Command {
     }
 
     public async run(client: Lavamusic, ctx: Context): Promise<any> {
-        const player = client.queue.get(ctx.guild!.id);
-        const vibratoEnabled = player.filters.includes("vibrato");
+        const player = client.manager.getPlayer(ctx.guild!.id);
+        const vibratoEnabled = player.filterManager.filters.vibrato;
 
         if (vibratoEnabled) {
-            player.player.setVibrato();
-            player.filters.splice(player.filters.indexOf("vibrato"), 1);
+            player.filterManager.toggleVibrato();
             await ctx.sendMessage({
                 embeds: [
                     {
@@ -46,8 +45,7 @@ export default class Vibrato extends Command {
                 ],
             });
         } else {
-            player.player.setVibrato({ depth: 0.75, frequency: 4 });
-            player.filters.push("vibrato");
+            player.filterManager.toggleVibrato();
             await ctx.sendMessage({
                 embeds: [
                     {

@@ -31,12 +31,11 @@ export default class Tremolo extends Command {
     }
 
     public async run(client: Lavamusic, ctx: Context): Promise<any> {
-        const player = client.queue.get(ctx.guild!.id);
-        const tremoloEnabled = player.filters.includes("tremolo");
+        const player = client.manager.getPlayer(ctx.guild!.id);
+        const tremoloEnabled = player.filterManager.filters.tremolo;
 
         if (tremoloEnabled) {
-            player.player.setTremolo();
-            player.filters.splice(player.filters.indexOf("tremolo"), 1);
+            player.filterManager.toggleTremolo();
             await ctx.sendMessage({
                 embeds: [
                     {
@@ -46,8 +45,7 @@ export default class Tremolo extends Command {
                 ],
             });
         } else {
-            player.player.setTremolo({ depth: 0.75, frequency: 4 });
-            player.filters.push("tremolo");
+            player.filterManager.toggleTremolo();
             await ctx.sendMessage({
                 embeds: [
                     {
