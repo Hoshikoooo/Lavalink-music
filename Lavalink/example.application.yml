@@ -41,13 +41,11 @@ plugins:
       yandexmusic: false # Enable Yandex Music source
       flowerytts: false # Enable Flowery TTS source
       youtube: true # Enable YouTube search source (https://github.com/topi314/LavaSearch)
-      vkmusic: false # Enable Vk Music source
     lyrics-sources:
-      spotify: true # Enable Spotify lyrics source
-      deezer: true # Enable Deezer lyrics source
+      spotify: false # Enable Spotify lyrics source
+      deezer: false # Enable Deezer lyrics source
       youtube: true # Enable YouTube lyrics source
-      yandexmusic: true # Enable Yandex Music lyrics source
-      vkmusic: true # Enable Vk Music lyrics source
+      yandexmusic: false # Enable Yandex Music lyrics source
     spotify:
       clientId: "your client id"
       clientSecret: "your client secret"
@@ -71,8 +69,6 @@ plugins:
       albumLoadLimit: 6 # The number of pages at 300 tracks each
     deezer:
       masterDecryptionKey: "your master decryption key" # the master key used for decrypting the deezer tracks. (yes this is not here you need to get it from somewhere else)
-      # arl: "your deezer arl" # the arl cookie used for accessing the deezer api this is optional but required for formats above MP3_128
-      formats: [ "FLAC", "MP3_320", "MP3_256", "MP3_128", "MP3_64", "AAC_64" ] # the formats you want to use for the deezer tracks. "FLAC", "MP3_320", "MP3_256" & "AAC_64" are only available for premium users and require a valid arl
     yandexmusic:
       accessToken: "your access token" # the token used for accessing the yandex music api. See https://github.com/TopiSenpai/LavaSrc#yandex-music
       playlistLoadLimit: 1 # The number of pages at 100 tracks each
@@ -86,11 +82,6 @@ plugins:
       audioFormat: "mp3" # supported formats are: mp3, ogg_opus, ogg_vorbis, aac, wav, and flac. Default format is mp3
     youtube:
       countryCode: "US" # the country code you want to use for searching lyrics via ISRC. See https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
-    vkmusic:
-      userToken: "your user token" # This token is needed for authorization in the api. Guide: https://github.com/topi314/LavaSrc#vk-music
-      playlistLoadLimit: 1 # The number of pages at 50 tracks each
-      artistLoadLimit: 1 # The number of pages at 10 tracks each
-      recommendationsLoadLimit: 10 # Number of tracks
   youtube:
     enabled: true # Whether this source can be used.
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
@@ -102,7 +93,11 @@ plugins:
       - MUSIC
       - WEB
       - ANDROID_TESTSUITE
+      - ANDROID_MUSIC
       - TVHTML5EMBEDDED
+      - ANDROID_LITE
+      - MEDIA_CONNECT
+      - IOS
       # This secure your lavalink is working and playing music if you used this two things below.
     #oauth:
      # enabled: true # IF YOU RUN YOUR LAVALINK CHECK YOUR CONSOLE AND CLICK THE GOOGLE.COM/DEVICES LINK AND THERE IS A CODE THAT YOU NEED TO PUT IN TO THE GOOGLE AND USE A BURNER ACCOUNT OR ALT ACCOUNT THERE IS A POSSIBLE CHANGE YOU CAN GET BANNED FROM GOOGLE OR YOUTUBE SO JUST USE A BURNER ACCOUNT IN CASE.
