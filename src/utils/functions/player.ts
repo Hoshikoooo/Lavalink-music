@@ -9,11 +9,8 @@ import type { Requester } from "../../types";
  * @returns {Requester} The transformed requester object.
  */
 export const requesterTransformer = (requester: any): Requester => {
-    // if it's already the transformed requester
     if (typeof requester === "object" && "avatar" in requester && Object.keys(requester).length === 3) return requester as Requester;
-    // if it's still a string
     if (typeof requester === "object" && "displayAvatarURL" in requester) {
-        // it's a user
         return {
             id: requester.id,
             username: requester.username,
@@ -92,6 +89,7 @@ export async function autoPlayFunction(player: Player, lastTrack?: Track): Promi
         return;
     }
     if (lastTrack.info.sourceName === "jiosaavn") {
+        // Type assertion to allow "jiosaavn"
         const res = await player.search({ query: `jsrec:${lastTrack.info.identifier}`, source: "jsrec" }, lastTrack.requester);
         if (res.tracks.length > 0) {
             const track = res.tracks.filter((v) => v.info.identifier !== lastTrack.info.identifier)[0];
